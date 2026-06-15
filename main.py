@@ -4,8 +4,7 @@ import requests
 app = Flask(__name__)
 
 TOKEN = "8624726972:AAHa89X4pWrLaD7c-GI3OUjmx7FuSL-5pQQ"
-
-GEMINI_KEY = "AIzaSyBmsVlC2CjYvKZ6OqbFLO5yOtQN_JRgiQ"  # ✅ این کلید منهای توست
+GROQ_KEY = "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"
 
 def send_message(chat_id, text):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
@@ -14,12 +13,16 @@ def send_message(chat_id, text):
     except Exception as e:
         print(f"خطا در ارسال: {e}")
 
-def ask_gemini(question):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_KEY}"
-    data = {"contents": [{"parts": [{"text": question}]}]}
+def ask_groq(question):
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {"Authorization": f"Bearer {GROQ_KEY}", "Content-Type": "application/json"}
+    data = {
+        "model": "mixtral-8x7b-32768",  # ✅ این مدل رو عوض کردم
+        "messages": [{"role": "user", "content": question}]
+    }
     try:
-        r = requests.post(url, json=data, timeout=20)
-        return r.json()["candidates"][0]["content"]["parts"][0]["text"]
+        r = requests.post(url, headers=headers, json=data, timeout=20)
+        return r.json()["choices"][0]["message"]["content"]
     except Exception as e:
         return f"❌ خطا: {e}"
 
@@ -31,10 +34,10 @@ def webhook():
             chat_id = update['message']['chat']['id']
             text = update['message'].get('text', '')
             if text == '/start':
-                send_message(chat_id, "سلام! من ربات هوشمند با گوگل جمینای هستم.")
+                send_message(chat_id, "سلام! من ربات هوشمند با Groq هستم.")
             elif text:
                 send_message(chat_id, "🤔 در حال فکر کردن...")
-                answer = ask_gemini(text)
+                answer = ask_groq(text)
                 send_message(chat_id, answer)
         return "ok", 200
     except Exception as e:
@@ -42,4 +45,4 @@ def webhook():
 
 @app.route('/')
 def home():
-    return "ربات هوشمند با جمینای فعال است", 200
+    return "ربات هوشمند با Groq فعال است", 200
