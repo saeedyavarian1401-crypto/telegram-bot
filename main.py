@@ -4,7 +4,8 @@ import requests
 app = Flask(__name__)
 
 TOKEN = "8624726972:AAHa89X4pWrLaD7c-GI3OUjmx7FuSL-5pQQ"
-DEEPSEEK_KEY = "sk-5ce288a4c6ed4c10ba125d1cfa981b06"
+
+GEMINI_KEY = "AIzaSyBmsVlC2CjYvKZ6OqbFLO5yOtQN_JRgiQ"  # ✅ این کلید منهای توست
 
 def send_message(chat_id, text):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
@@ -13,15 +14,14 @@ def send_message(chat_id, text):
     except Exception as e:
         print(f"خطا در ارسال: {e}")
 
-def ask_deepseek(question):
-    url = "https://api.deepseek.com/v1/chat/completions"
-    headers = {"Authorization": f"Bearer {DEEPSEEK_KEY}", "Content-Type": "application/json"}
-    data = {"model": "deepseek-chat", "messages": [{"role": "user", "content": question}]}
+def ask_gemini(question):
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_KEY}"
+    data = {"contents": [{"parts": [{"text": question}]}]}
     try:
-        r = requests.post(url, headers=headers, json=data, timeout=15)
-        return r.json()["choices"][0]["message"]["content"]
+        r = requests.post(url, json=data, timeout=20)
+        return r.json()["candidates"][0]["content"]["parts"][0]["text"]
     except Exception as e:
-        return f"خطا در هوش مصنوعی: {e}"
+        return f"❌ خطا: {e}"
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -31,10 +31,10 @@ def webhook():
             chat_id = update['message']['chat']['id']
             text = update['message'].get('text', '')
             if text == '/start':
-                send_message(chat_id, "سلام! من ربات هوشمند کتابخونه‌ات هستم.")
+                send_message(chat_id, "سلام! من ربات هوشمند با گوگل جمینای هستم.")
             elif text:
                 send_message(chat_id, "🤔 در حال فکر کردن...")
-                answer = ask_deepseek(text)
+                answer = ask_gemini(text)
                 send_message(chat_id, answer)
         return "ok", 200
     except Exception as e:
@@ -42,4 +42,4 @@ def webhook():
 
 @app.route('/')
 def home():
-    return "ربات هوشمند فعال است", 200
+    return "ربات هوشمند با جمینای فعال است", 200
