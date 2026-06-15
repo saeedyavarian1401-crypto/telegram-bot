@@ -43,5 +43,3 @@ def webhook():
 @app.route('/')
 def home():
     return "ربات هوشمند فعال است", 200
-
-
