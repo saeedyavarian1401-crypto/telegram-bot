@@ -1,5 +1,6 @@
 from flask import Flask, request
 import requests
+import json
 
 app = Flask(__name__)
 
@@ -15,16 +16,29 @@ def send_message(chat_id, text):
 
 def ask_groq(question):
     url = "https://api.groq.com/openai/v1/chat/completions"
-    headers = {"Authorization": f"Bearer {GROQ_KEY}", "Content-Type": "application/json"}
+    headers = {
+        "Authorization": f"Bearer {GROQ_KEY}",
+        "Content-Type": "application/json"
+    }
     data = {
-        "model": "llama3-70b-8192",
-        "messages": [{"role": "user", "content": question}]
+        "model": "llama-3.3-70b-versatile",
+        "messages": [{"role": "user", "content": question}],
+        "temperature": 0.7,
+        "max_tokens": 1024
     }
     try:
-        r = requests.post(url, headers=headers, json=data, timeout=20)
-        return r.json()["choices"][0]["message"]["content"]
+        r = requests.post(url, headers=headers, json=data, timeout=30)
+        print(f"گروک پاسخ داد: {r.status_code}")
+        print(f"محتوای پاسخ: {r.text[:200]}")  # برای خطایابی
+        
+        result = r.json()
+        # انتخاب درست از ساختار پاسخ گروک [citation:6]
+        if "choices" in result and len(result["choices"]) > 0:
+            return result["choices"][0]["message"]["content"]
+        else:
+            return f"خطا: ساختار پاسخ نامعتبر - {result}"
     except Exception as e:
-        return f"❌ خطا: {e}"
+        return f"❌ خطا: {str(e)}"
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -34,15 +48,16 @@ def webhook():
             chat_id = update['message']['chat']['id']
             text = update['message'].get('text', '')
             if text == '/start':
-                send_message(chat_id, "سلام! من ربات کتابخونه‌ات هستم. هر سوالی بپرس.")
-            else:
+                send_message(chat_id, "سلام! من ربات هوشمند با Groq هستم.")
+            elif text:
                 send_message(chat_id, "🤔 در حال فکر کردن...")
                 answer = ask_groq(text)
                 send_message(chat_id, answer)
         return "ok", 200
     except Exception as e:
+        print(f"خطا در وب هوک: {e}")
         return "error", 500
 
 @app.route('/')
 def home():
-    return "ربات کتابخانه هوشمند فعال است", 200
+    return "ربات هوشمند با Groq فعال است", 200
