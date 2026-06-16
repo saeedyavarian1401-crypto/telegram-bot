@@ -1,13 +1,10 @@
 from flask import Flask, request
 import requests
-import tempfile
-import os
 
 app = Flask(__name__)
 
 TOKEN = "8624726972:AAHa89X4pWrLaD7c-GI3OUjmx7FuSL-5pQQ"
 GROQ_KEY = "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"
-CHANNEL_ID = "-1004274256213"
 
 def send_message(chat_id, text):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
